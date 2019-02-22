@@ -7,6 +7,7 @@ typedef struct pipe{
   char buf[8]; //writer cannot write more than 8 chars
   int head, tail;
   int data, room;
+  int nreader, nwriter;
 }PIPE;
 
 PIPE pipe;
@@ -58,11 +59,16 @@ int read_pipe(PIPE *p, char *buf, int n)
        kwakeup(&p->room);
        return ret;
     }
+    
     // pipe has no data
-    printf("reader %d sleep for data\n", running->pid);
-    kwakeup(&p->room); //wakeup writer side
-    ksleep(&p->data);
-    continue;
+    if(p->nwriter){
+      printf("reader %d sleep for data\n", running->pid);
+      kwakeup(&p->room); //wakeup writer side
+      ksleep(&p->data);
+      continue;
+    }
+
+    return 0;  // no data, no writer  
   }
 }
 
@@ -73,6 +79,9 @@ int write_pipe(PIPE *p, char *buf, int n) //pipe ptr, buf, how many bytes
   show_pipe();
   while (n){
     printf("writer %d writing pipe\n", running->pid);
+    if(!(p->nreader))
+      return -1;
+
     while (p->room){ //room has only 8, at most write 8 chars, then wait for someone to wake up
        p->buf[p->head++] = *buf; 
        p->head  %= PSIZE;
@@ -102,6 +111,10 @@ int pipe_reader()
     printf("input nbytes to read : " );
     nbytes = geti(); kgetc();
     n = read_pipe(p, line, nbytes);
+    if(!n)
+    {
+      printf("Error: No Data and No Writers\n");
+    }
     line[n] = 0;
     printf("Read n=%d bytes : line=%s\n", n, line);
   }
@@ -127,6 +140,10 @@ int pipe_writer()
     nbytes = strlen(line);
     printf("nbytes=%d buf=%s\n", nbytes, line);
     n = write_pipe(p, line, nbytes);
+    if(n == -1)
+    {
+      printf("Error: Broken Pipe\n");
+    }
     printf("wrote n=%d bytes\n", n);
   }
 }

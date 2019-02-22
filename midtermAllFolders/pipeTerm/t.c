@@ -142,6 +142,15 @@ int main()
 {
   int pid, status;
    printf("Welcome to the MT Multitasking System\n");
+   fbuf_init();
+   kbd_init();
+   
+   /* enable SIC interrupts */
+   VIC_INTENABLE |= (1<<31); // SIC to VIC's IRQ31
+   /* enable KBD IRQ */
+   SIC_INTENABLE = (1<<3); // KBD int=bit3 on SIC
+   SIC_ENSET = (1<<3);  // KBD int=3 on SIC
+   
    init();    // initialize system; create and run P0
 
    kfork(INIT);

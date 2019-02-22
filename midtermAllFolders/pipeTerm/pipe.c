@@ -79,7 +79,7 @@ int write_pipe(PIPE *p, char *buf, int n) //pipe ptr, buf, how many bytes
   show_pipe();
   while (n){
     printf("writer %d writing pipe\n", running->pid);
-    if(!(p->nreader))
+    if(p->nreader == -1)
       return -1;
 
     while (p->room){ //room has only 8, at most write 8 chars, then wait for someone to wake up
@@ -110,10 +110,19 @@ int pipe_reader()
   while(1){
     printf("input nbytes to read : " );
     nbytes = geti(); kgetc();
+    if(nbytes == 0)
+    {
+      p->nreader = -1;
+      kexit(69);
+    }
+    else
+      p->nreader = 1;
+      
     n = read_pipe(p, line, nbytes);
     if(!n)
     {
       printf("Error: No Data and No Writers\n");
+      break;
     }
     line[n] = 0;
     printf("Read n=%d bytes : line=%s\n", n, line);
@@ -132,20 +141,31 @@ int pipe_writer()
     printf("input a string to write : " );
 
     kgets(line);
-    line[strlen(line)-1] = 0;
+    // line[strlen(line)-1] = 0;
 
-    if (strcmp(line, "")==0)
-       continue;
-
+    if (strcmp(line,"")==0)
+    {
+      if(strcmp(p->buf, "") == 0)
+      {
+        p->nwriter = 0;
+      }
+      kexit(420);
+    }
+    else
+    {
+      p->nwriter = 1;
+    }
+    
     nbytes = strlen(line);
     printf("nbytes=%d buf=%s\n", nbytes, line);
     n = write_pipe(p, line, nbytes);
     if(n == -1)
     {
       printf("Error: Broken Pipe\n");
+      break;
+    }else
+    {
+      printf("wrote n=%d bytes\n", n);
     }
-    printf("wrote n=%d bytes\n", n);
   }
 }
-
-

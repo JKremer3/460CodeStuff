@@ -1,4 +1,5 @@
-
+#define printf kprintf
+#define gets kgets
 
 typedef struct semaphore{
   int value;

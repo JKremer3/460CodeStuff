@@ -1,5 +1,7 @@
 #define NPIPE 10
 #define PSIZE  8 //8 chars
+#define printf kprintf
+#define gets kgets
 
 typedef struct pipe{
   char buf[8]; //writer cannot write more than 8 chars

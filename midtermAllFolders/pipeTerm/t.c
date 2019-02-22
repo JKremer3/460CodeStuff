@@ -131,7 +131,7 @@ int kfork(int func)
       p->kstack[SSIZE - i] = 0;
 
   p->kstack[SSIZE-1] = (int)func;      // retPC -> func()
-  p->ksp = &(p->kstack[SSIZE - 9]);   // PROC.ksp -> saved eflag 
+  p->ksp = &(p->kstack[SSIZE - 14]);   // PROC.ksp -> saved eflag 
   enqueue(&readyQueue, p);             // enter p into readyQueue
   
   return p->pid;

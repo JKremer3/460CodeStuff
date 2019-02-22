@@ -127,7 +127,7 @@ int kfork(int func)
    kstack contains: |pid|exit|retPC|eax|ebx|ecx|edx|ebp|esi|edi|eflag|
                      -1   -2   -3   -4  -5  -6  -7  -8  -9  -10  -11
   **********************************************************/
-  for (i=1; i<12; i++)                 // zero out kstack cells
+  for (i=1; i<14; i++)                 // zero out kstack cells
       p->kstack[SSIZE - i] = 0;
 
   p->kstack[SSIZE-1] = (int)func;      // retPC -> func()
@@ -141,15 +141,16 @@ int kfork(int func)
 int main()
 {
   int pid, status;
-   printf("Welcome to the MT Multitasking System\n");
-   fbuf_init();
+  fbuf_init();
    kbd_init();
-   
-   /* enable SIC interrupts */
-   VIC_INTENABLE |= (1<<31); // SIC to VIC's IRQ31
+
+    VIC_INTENABLE |= (1<<31); // SIC to VIC's IRQ31
    /* enable KBD IRQ */
    SIC_INTENABLE = (1<<3); // KBD int=bit3 on SIC
    SIC_ENSET = (1<<3);  // KBD int=3 on SIC
+   
+   printf("Welcome to the MT Multitasking System\n");
+   /* enable SIC interrupts */
    
    init();    // initialize system; create and run P0
 

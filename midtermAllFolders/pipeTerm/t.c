@@ -127,7 +127,7 @@ int kfork(int func)
    kstack contains: |pid|exit|retPC|eax|ebx|ecx|edx|ebp|esi|edi|eflag|
                      -1   -2   -3   -4  -5  -6  -7  -8  -9  -10  -11
   **********************************************************/
-  for (i=1; i<14; i++)                 // zero out kstack cells
+  for (i=1; i<15; i++)                 // zero out kstack cells
       p->kstack[SSIZE - i] = 0;
 
   p->kstack[SSIZE-1] = (int)func;      // retPC -> func()

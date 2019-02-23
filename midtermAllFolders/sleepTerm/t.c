@@ -88,6 +88,8 @@ int menu()
   kprintf("**********************************\n");
 }
 
+char *status[ ] = {"FREE", "READY", "SLEEP", "ZOMBIE", "BLOCK"};
+
 int printProcTree(PROC* p)
 {
   if(p == 0)
@@ -102,7 +104,7 @@ int printProcTree(PROC* p)
   return 1;
 }
 
-char *status[ ] = {"FREE", "READY", "SLEEP", "ZOMBIE", "BLOCK"};
+
 
 int do_ps()
 {

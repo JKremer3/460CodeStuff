@@ -279,3 +279,31 @@ int stestring(char *s)
   }
   *s = 0;
 }
+
+int undchar(unsigned char c, int x, int y)
+{
+  int row, bit;
+  unsigned char *caddress, byte;
+
+  caddress = font + c*16;
+  //  printf("c=%x %c caddr=%x\n", c, c, caddress);
+
+  for (row=0; row<16; row++){
+    byte = *(caddress + row);
+
+    for (bit=0; bit<8; bit++){
+      if (byte & (1<<bit))
+	  clrpix(x+bit, y+row);
+    }
+  }
+}
+
+int unkpchar(char c, int ro, int co)
+{
+   int x, y;
+   x = co*8;
+   y = ro*16;
+   //printf("c=%x [%d%d] (%d%d)\n", c, ro,co,x,y);
+   undchar(c, x, y);
+}
+

@@ -15,7 +15,7 @@ int procsize = sizeof(PROC);
 #include "kbd.c"
 #include "vid.c"
 #include "exceptions.c"
-
+#include "timer.c"
 #include "queue.c"
 #include "wait.c"      // include wait.c file
 
@@ -26,8 +26,9 @@ int procsize = sizeof(PROC);
 int body(), tswitch(), do_sleep(), do_wakeup(), do_exit(), do_switch();
 int do_kfork();
 int scheduler();
-
 int kprintf(char *fmt, ...);
+
+TIMER *tp;
 
 void copy_vectors(void) {
     extern u32 vectors_start;
@@ -46,6 +47,10 @@ void IRQ_handler()
     // read VIC SIV status registers to find out which interrupt
     vicstatus = VIC_STATUS;
     sicstatus = SIC_STATUS;  
+    if (vicstatus & 0x0010){   // timer0,1=bit4
+         timer_handler(0);
+    }
+
     if (vicstatus & 0x80000000){ // SIC interrupts=bit_31=>KBD at bit 3 
        if (sicstatus & 0x08){
           kbd_handler();
@@ -280,6 +285,7 @@ int main()
    kbd_init();
    
    /* enable SIC interrupts */
+   VIC_INTENABLE |= (1<<4);  // timer0,1 at bit4 me
    VIC_INTENABLE |= (1<<31); // SIC to VIC's IRQ31
    /* enable KBD IRQ */
    SIC_INTENABLE = (1<<3); // KBD int=bit3 on SIC
@@ -287,7 +293,9 @@ int main()
    *(kp->base+KCNTL) = 0x12;
 
    init();
-
+   timer_init();
+   tp = &timer;
+   timer_start(0);
    printQ(readyQueue);
    kfork();   // kfork P1 into readyQueue  
 

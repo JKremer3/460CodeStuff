@@ -35,7 +35,7 @@ int strcmp(char *s1, char *s2)
 
 }
 
-int strcpy(char *dest, char *src)
+int kstrcpy(char *dest, char *src)
 {
   while(*src){
     *dest++ = *src++;

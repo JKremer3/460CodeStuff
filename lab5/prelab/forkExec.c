@@ -123,7 +123,7 @@ int kfork2()
 {
   int i;
   char *PA, *CA;
-  PROC *p = dequeue(&freeList);
+  PROC *p = getproc(&freeList);
 
   if(p== 0)
   {

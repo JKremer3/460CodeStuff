@@ -118,6 +118,43 @@ PROC *kfork(char *filename)
 
   return p;
 }
+//pgdir fork?
+int kfork2()
+{
+  int i;
+  char *PA, *CA;
+  PROC *p = get_proc(&freeList);
+
+  if(p== 0)
+  {
+    kprintf("Fork Failed\n");
+    return -1;
+  }
+
+  p->ppid = running->pid;
+  p->parent = running;
+  p->status = READY;
+  p->priority = 1;
+  p->pgdir = (int *)(0x600000 + (p->pid - 1)*0x4000);
+  
+  PA = (char *)running->pgdir[2048] & 0xFFFF0000;
+  CA = (char *)p->pgdir[2048] & 0xFFFF0000;
+
+  memcpy(CA, PA, 0x100000);
+
+  for (i=1; i <=14; i++)
+  {
+    p->kstack[SSIZE-1] = running->kstack[SSIZE -1];
+  }
+
+  p->kstack[SSIZE - 14] = 0;
+  p->kstack[SSIZE - 15] = (int)goUmode;
+  p->ksp = &(p->kstack[SSIZE - 28]);
+  p->usp = running->usp;
+  //p->ucpsr = running-> ucpsr
+  enqueue(&readyQueue, p);
+  return p->pid;
+}
 
 int kexec(char *cmdline)
 {

@@ -1,0 +1,36 @@
+
+(4). Draw a diagram to show the control flow of P1, which executes:
+
+     int pid = getpid();       in Umode space
+
+Required steps: YOU explain how each step leads to the next:
+			
+
+1. syscall(0,0,0,0) in C  			
+
+	syscalls can't be done in C so we go to ts.s
+
+2. syscall: in ts.s
+			stmfd sp!, {lr}
+			swi #0
+			ldmfd sp!, {pc}
+
+3. where does it go to ts.s?
+	goes to svc_entry because of svc interrupt
+
+4. svc_entry:  
+	-> svc mode with svc stack. Save user mode process
+	->enter svc.c
+	syscall happens
+	goes into svc handler, switches on 0 (provided from syscall)
+
+5. r = kgetpid();
+	r is return value of kernel function return
+	r returns to goUmode
+
+6. goUmode:
+	replaces r0 in kstack with r
+
+7. how does pid get returned to (1)?
+		reading r0 after goUmode completesps
+			

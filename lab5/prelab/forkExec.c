@@ -123,7 +123,7 @@ int kfork2()
 {
   int i;
   char *PA, *CA;
-  PROC *p = get_proc(&freeList);
+  PROC *p = dequeue(&freeList);
 
   if(p== 0)
   {
@@ -137,8 +137,8 @@ int kfork2()
   p->priority = 1;
   p->pgdir = (int *)(0x600000 + (p->pid - 1)*0x4000);
   
-  PA = (char *)running->pgdir[2048] & 0xFFFF0000;
-  CA = (char *)p->pgdir[2048] & 0xFFFF0000;
+  PA = running->pgdir[2048] & 0xFFFF0000;
+  CA = p->pgdir[2048] & 0xFFFF0000;
 
   memcpy(CA, PA, 0x100000);
 

@@ -71,7 +71,7 @@ int svc_handler(int a, int b, int c, int d)
      case 6: r = kwakeup(b);         break;
      case 7: r = kwait(b);           break;
      case 8: r = kexit(b);           break;
-     case 9: r = kfork((char*) b);           break;
+     case 9: r = kfork2();           break;
      case 10: r = kexec(b);          break;
      case 90: r = kgetc() & 0x7F;    break;
      case 91: r = kputc(b);          break;

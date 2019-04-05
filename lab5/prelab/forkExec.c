@@ -3,6 +3,7 @@ int body(), goUmode();
 
 PROC *kfork(char *filename)
 {
+  // LOOK HERE, entries that are missing in kfork2
   int i; 
   int *ptable, pentry;
   char *addr;
@@ -121,6 +122,7 @@ PROC *kfork(char *filename)
 //pgdir fork?
 int kfork2()
 {
+  // LOOK HERE, what is the descrepency between kfork and this, which should be named fork, not kfork2
   int i;
   char *PA, *CA;
   PROC *p = getproc(&freeList);
@@ -136,7 +138,9 @@ int kfork2()
   p->status = READY;
   p->priority = 1;
   p->pgdir = (int *)(0x600000 + (p->pid - 1)*0x4000);
-  
+
+  // LOOK HERE where is the page table initialization or page entry?
+
   PA = running->pgdir[2048] & 0xFFFF0000;
   CA = p->pgdir[2048] & 0xFFFF0000;
 
@@ -146,6 +150,7 @@ int kfork2()
   {
     p->kstack[SSIZE-1] = running->kstack[SSIZE -1];
   }
+  //LOOK HERE what about the rest of the registers? 
 
   p->kstack[SSIZE - 14] = 0;
   p->kstack[SSIZE - 15] = (int)goUmode;

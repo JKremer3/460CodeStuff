@@ -3,7 +3,6 @@ int body(), goUmode();
 
 PROC *kfork(char *filename)
 {
-  // LOOK HERE, entries that are missing in kfork2
   int i; 
   int *ptable, pentry;
   char *addr;
@@ -119,14 +118,17 @@ PROC *kfork(char *filename)
 
   return p;
 }
-//pgdir fork?
-int kfork2()
+
+int fork() //Now with PGDIR functionality
 {
-  // LOOK HERE, what is the descrepency between kfork and this, which should be named fork, not kfork2
+  //LOOK HERE 1
+  //kprintf("entered fork\n");
   int i;
-  char *PA, *CA;
+  char *PA, *CA, *addr;
+  int *ptable, pentry;
   PROC *p = getproc(&freeList);
 
+  kprintf("got p from freelist\n");
   if(p== 0)
   {
     kprintf("Fork Failed\n");
@@ -137,20 +139,31 @@ int kfork2()
   p->parent = running;
   p->status = READY;
   p->priority = 1;
+  //LOOK HERE 2
   p->pgdir = (int *)(0x600000 + (p->pid - 1)*0x4000);
+  ptable = p->pgdir;
+  for (i=0; i<4096; i++)
+    ptable[i] = 0;
+  pentry = 0x412;
+  for (i=0; i<258; i++){
+    ptable[i] = pentry;
+    pentry += 0x100000;
+  }
 
-  // LOOK HERE where is the page table initialization or page entry?
-
+  ptable[2048] = 0x800000 + (p->pid - 1)*0x100000|0xC32;
+  
+  //kprintf("set p variables\n");
   PA = running->pgdir[2048] & 0xFFFF0000;
   CA = p->pgdir[2048] & 0xFFFF0000;
 
+  //kprintf("set PA and CA\n");
   memcpy(CA, PA, 0x100000);
-
-  for (i=1; i <=14; i++)
+  //kprintf("completed memcpy\n");
+  
+  for (i=1; i <=29; i++)
   {
-    p->kstack[SSIZE-1] = running->kstack[SSIZE -1];
+    p->kstack[SSIZE-i] = running->kstack[SSIZE -i];
   }
-  //LOOK HERE what about the rest of the registers? 
 
   p->kstack[SSIZE - 14] = 0;
   p->kstack[SSIZE - 15] = (int)goUmode;
@@ -158,6 +171,8 @@ int kfork2()
   p->usp = running->usp;
   //p->ucpsr = running-> ucpsr
   enqueue(&readyQueue, p);
+  kprintf("proc %d kforked a child %d: ", running->pid, p->pid); 
+  printQ(readyQueue);
   return p->pid;
 }
 

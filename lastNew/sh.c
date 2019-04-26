@@ -1,7 +1,7 @@
 #include "ucode.c"
 #define BLK 1024
 
-char *name[16];
+char *name[16], components[64];
 int nk;
 int nowait;
 
@@ -21,23 +21,28 @@ int main(int argc, char *argv[])
 {
   int pid, status, i;
   char buf[256], tbuf[256], *cp, *cq;
-
+  /********************************
+  printf("argc=%d ",argc);
+  for (i=0; i<argc; i++)
+    printf("%s  ", argv[i]);
+  printf("\n\r");
+  *********************************/
   signal(2, 1); /* ignore signal#2: Control-C interrupts */
 
-  color = getpid() + 10;
+  color = getpid() + 0x000A;
   //printf("sh %d running\n", getpid());
 
   while (1)
   {
     printf("sh %d# ", getpid());
 
-    //grabs le buf
     gets(buf);
-    
+    /* printf("input=%s\n", buf); */
     if (buf[0] == 0)
       continue;
 
     /* condition input string */
+    //     printf("input=%s\n", buf);
     cp = buf;
     while (*cp == ' ') // skip leading blanks
       cp++;
@@ -46,8 +51,6 @@ int main(int argc, char *argv[])
     while (*cq) // zero our trailing blanks
       cq++;
     cq--;
-
-    //backtrack from last blank and 0 it out
     while (*cq == ' ')
     {
       *cq = 0;
@@ -57,22 +60,17 @@ int main(int argc, char *argv[])
     //printf("input=%s\n", buf);
 
     if (strcmp(cp, "") == 0) // if nothing or a bunch of spaces
-      continue;              // repeat the while loop
+      continue;              //    repeat the while loop
 
-    //ensure tbuf and buf are the same, which should be cp
-    // which should be process
     strcpy(tbuf, cp);
     strcpy(buf, tbuf);
-    strcpy(tbuf, buf); 
+    //printf("input=%s\n", buf);
 
-    //CONSUME tbuf, and store names in name[]
-    //numbers of names stored in nk
+    strcpy(tbuf, buf);
+
     nk = eatpath(tbuf, name);
 
     nowait = 0;
-
-    //delet?
-    //formerly attempting to & commands
     if (nk > 1)
     {
       if (strcmp(name[nk - 1], "&") == 0)
@@ -105,9 +103,27 @@ int main(int argc, char *argv[])
       continue;
     }
 
+    if (strcmp(name[0], "echo") == 0)
+    {
+      for (i = 1; i < nk; i++)
+      {
+        printf("%s ", name[i]);
+      }
+      //printf("\n");
+      continue;
+    }
+
     if (strcmp(name[0], "?") == 0 || strcmp(name[0], "help") == 0)
     {
       menu();
+      continue;
+    }
+
+    /* chname must be done by sh itself */
+    if (strcmp(name[0], "chname") == 0)
+    {
+      //printf("sh chname to %s\n", cp);
+      chname(name[1]);
       continue;
     }
 
@@ -134,14 +150,14 @@ int main(int argc, char *argv[])
     { /* parent sh */
 
       if (nowait)
-      { //do a process switch, and continue
+      {
         printf("parent sh %d: no wait for child\n", getpid());
         nowait = 0;
         tswitch();
         continue;
       }
       else
-      { //wait child, then continue
+      {
         printf("parent sh %d: wait for child %d to die\n", getpid(), pid);
         pid = wait(&status);
         printf("sh %d: child %d exit status = %x\n", getpid(), pid, status);
@@ -150,7 +166,7 @@ int main(int argc, char *argv[])
     }
     else
     {
-      
+      // printf("child sh %d return to Umode pid=%d\n", getpid(), pid);
       printf("child sh %d running : cmd=%s\n", getpid(), buf);
       do_pipe(buf, 0);
     }
@@ -158,7 +174,9 @@ int main(int argc, char *argv[])
 }
 
 // scan breaks up buf = "head | tail" into  "head"  "tail"
-int scan(char *buf, char **tail)
+
+int scan(buf, tail) char *buf;
+char **tail;
 {
   char *p;
 
@@ -193,17 +211,20 @@ int do_pipe(char *buf, int *rpd)
   if (rpd)
   {
     // as writer on RIGHT side pipe
-    //close  PipeReader cuz reading from stdin
-    //close stdout cuz outputing with PipeWriter
-    //duplicate PipeWriter for use now
-    //close PipeWriter to open new PipeWriter
     close(rpd[0]);
     close(1);
     dup(rpd[1]);
     close(rpd[1]);
   }
 
+  //printf("proc %d do_pipe: buf=%s ", getpid(), buf);
+  /*
+  if (rpd) print2f("rpd=[%d %d]  ", rpd[0], rpd[1]);
+  printf("\n");
+  *****************/
+
   hasPipe = scan(buf, &tail);
+  //printf("after scan: buf=%s  tail=%s\n", buf, tail);
 
   if (hasPipe)
   { // buf=head; tail->tailString
@@ -212,7 +233,7 @@ int do_pipe(char *buf, int *rpd)
       printf("proc %d pipe call failed\n", getpid());
       exit(1);
     }
-    
+    // printf("after pipe(): lpd[0|1]=[%d %d]\n", lpd[0], lpd[1]);
     pid = fork();
 
     if (pid < 0)
@@ -223,10 +244,6 @@ int do_pipe(char *buf, int *rpd)
 
     if (pid)
     { // parent as reader on LEFT side pipe
-      //Closing Left PipeWriter cuz writing with stdout
-      //Close stdin, cuz reading from PipeWriter
-      //Duplicate PipeReader for use
-      //Close PipeReader to open new PipeReader
       close(lpd[1]);
       close(0);
       dup(lpd[0]);
@@ -252,15 +269,11 @@ int command(char *s)
   int i, j, nk, I;
   char cmdline[64];
 
-  //copy s into tbuf
-  //so it can be eaten for the path
   strcpy(tbuf, s);
   nk = eatpath(tbuf, name);
 
-  //duplicate nk
   I = nk;
 
-  // hunting for input redirect
   for (i = 0; i < nk; i++)
   {
     if (strcmp(name[i], "<") == 0)
@@ -282,7 +295,6 @@ int command(char *s)
       break;
     }
   }
-  //hunt for output redirect
   for (i = 0; i < nk; i++)
   {
     if (strcmp(name[i], ">") == 0)
@@ -300,7 +312,6 @@ int command(char *s)
       break;
     }
   }
-  //hunt for output append redirect
   for (i = 0; i < nk; i++)
   {
     if (strcmp(name[i], ">>") == 0)
@@ -320,17 +331,19 @@ int command(char *s)
       break;
     }
   }
+  //printf("after I/O redirection ");
 
-  //strcpy first command into cmdline
   strcpy(cmdline, name[0]);
-  
-  //copy until first io redirect
+  //printf("cmdline=%s I=%d ", cmdline, I);
+
   for (j = 1; j < I; j++)
   {
     strcat(cmdline, " ");
     strcat(cmdline, name[j]);
   }
   /********* must write to 2 for correct output redirect **********/
+  //print2f("proc %d exec %s\n", getpid(), name[0]);
+  //printf("%d before exec\n", getpid());
   if (getpid() < 9)
   {
     if (exec(cmdline) < 0)
@@ -342,6 +355,5 @@ int command(char *s)
     printf("%d : enter a key : ", getpid());
     getc();
   }
-
   return 1;
 }

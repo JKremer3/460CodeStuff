@@ -21,10 +21,10 @@ int str(char *src, char *target)
 int main(int argc, char *argv[])
 {
   int fd, n, count, cr, i, j, newline, backspace;
-  int lineRead;
+  int nn;
 
   STAT st0, st1, sttty;
-  int redirect;
+  int red0, red1;
 
   print2f("Now entering my grep\n\r");
 
@@ -40,46 +40,46 @@ int main(int argc, char *argv[])
   fstat(0, &st0);
   fstat(1, &st1);
   stat(mytty, &sttty);
-  
-  redirect = 1;
-  //checks if input is from terminal, if yes sets redirect to 0
+  red0 = 1;
   if (st0.st_dev == sttty.st_dev && st0.st_ino == sttty.st_ino)
-    redirect = 0;
+    red0 = 0;
+
+  red1 = 1;
+  if (st1.st_dev == sttty.st_dev && st1.st_ino == sttty.st_ino)
+    red1 = 0;
 
   if (argc < 2)
   { // grep from stdin
     printf("usage : grep pattern filename\n");
     exit(1);
   }
-
+  /*
+    printf("argc=%d argv[1]=%s red0=%d red1=%d\n", argc, argv[1], red0, red1);
+    getc();
+    */
   if (argc == 2)
   {
-     
+    //grep for piping; 
 
-    // if 0 has been redirected ==> do NOT show the lines read==>getline()
+    // if 0 has bee redirected ==> do NOT show the lines read==>getline()
     // otherwise, must show each char typed ==> call gets()
-    if (redirect)
+    if (red0)
     {
-      //grep for piping: 
-      lineRead = 1;
-      //while there is a next line
-      while (line)
+      nn = 1;
+      while (nn)
       {
-        lineRead = getline(uline);
-        //printf("line=%x\n", line);
+        nn = getline(uline);
+        //printf("nn=%x\n", nn);
 
-        //check to see if argv[1] is in uline, 
-        //if true, print the line 
         if (str(uline, argv[1]))
           printf("%s", uline);
       }
     }
     else
     {
-      //while the user is typing 
+      printf("G6 ");
       while (gets(uline))
       {
-        //if what the user typed contains argv[1], echo
         if (str(uline, argv[1]))
           printf("%s", uline);
       }
@@ -87,7 +87,6 @@ int main(int argc, char *argv[])
   }
   else
   {
-    //standalone grep: used as " grep 'word' *file* "
     printf("open %s for read\n", argv[2]);
     fd = open(argv[2], O_RDONLY); /* open input file for READ */
     if (fd < 0)
@@ -117,8 +116,7 @@ int main(int argc, char *argv[])
 
       //printf("uline=%s\n", uline);
 
-      //checks line for argv[1]
-      if (str(uline, argv[1])) 
+      if (str(uline, argv[1]))
         printf("%s", uline);
 
       lseek(fd, (long)count, 0);

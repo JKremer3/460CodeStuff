@@ -1,0 +1,4 @@
+rm a.out
+gcc -m32 t.c ts.s -w
+ls -l a.out
+./a.out
